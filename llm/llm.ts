@@ -10,7 +10,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-const TIMEOUT_MS = 240_000;
+const TIMEOUT_MS = 600_000;
 const MAX_OUTPUT_TOKENS = 8192;
 const ANTHROPIC_DEFAULT_MODEL = "claude-sonnet-5-5";
 
@@ -79,15 +79,18 @@ async function completeWithCursor<T>(
         settingSources: [],
       },
     });
-    result = await Promise.race([
-      prompt,
-      new Promise<never>((_, reject) => {
-        setTimeout(
-          () => reject(new Error("Cursor request timed out")),
-          TIMEOUT_MS
-        );
-      }),
-    ]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error("Cursor request timed out")),
+        TIMEOUT_MS
+      );
+    });
+    try {
+      result = await Promise.race([prompt, timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
   } catch (error) {
     if (error instanceof CursorAgentError) {
       throw new Error(`Cursor request failed: ${error.message}`);

@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { crawlSite } from "../../../crawler/crawler";
 import { reviseIa } from "../../../ia/ia";
-import { loadRules } from "../../../ia/rules";
+import { IaScope, loadRules } from "../../../ia/rules";
 
-export const maxDuration = 600;
+export const maxDuration = 1800;
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const url = body.url;
+    const scope: IaScope | null =
+      body.scope === "product" || body.scope === "feature" ? body.scope : null;
 
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
+    }
+    if (!scope) {
+      return NextResponse.json(
+        { error: "Choose whether this link is for a product or a feature" },
+        { status: 400 }
+      );
     }
 
     try {
@@ -29,13 +37,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No pages found" }, { status: 422 });
     }
 
-    const rules = await loadRules();
+    const rules = await loadRules(scope);
     const ia = await reviseIa(pages, rules.text);
 
     return NextResponse.json({
       startUrl: url,
+      scope,
       pageCount: pages.length,
       rulesSource: rules.source,
+      appliedRule: rules.applied,
       rules: rules.text,
       ia,
     });

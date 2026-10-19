@@ -8,10 +8,12 @@ architecture tree** for the whole section. Each node is a page title.
 
 1. `crawler/crawler.ts` crawls the section with Playwright.
 2. `ia/rules.ts` loads the rules from [`Rules.md`](./Rules.md) (falls back to
-   built-in defaults if the file is empty).
+   built-in defaults if the file is empty). A product link uses Rule A1; a
+   feature link uses Rule A2. Rules B and C always apply.
 3. `ia/ia.ts` asks the LLM to rearrange the existing pages into a tree that
-   follows the rules. Output is validated: every page appears exactly once, no
-   pages are invented or renamed, and depth is capped.
+   follows the rules. Every crawled page appears exactly once. Topics the
+   rules require but the section does not have are added as highlighted
+   missing topics. Depth is capped.
 4. `app/page.tsx` shows the recommended tree. Moved pages are highlighted, and
    the rules and the current structure are available for comparison.
 
