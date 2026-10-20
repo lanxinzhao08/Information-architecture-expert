@@ -1,7 +1,7 @@
 # Information Architecture Reviser
 
 Enter the URL of a documentation section. The app crawls the pages under that
-URL (up to 50 pages, 3 levels deep) and returns a **recommended information
+URL (up to 400 pages, including every descendant under that URL) and returns a **recommended information
 architecture tree** for the whole section. Each node is a page title.
 
 ## How it works
@@ -47,3 +47,12 @@ LLM_MODEL=claude-sonnet-5-5
 
 Edit `Rules.md` to change the rules; it is read on every request, so no restart
 is needed.
+
+## Pipeline stages and Claude Code skills
+
+The revise flow runs four stages: **crawl → classify → reorganize → audit**.
+The UI runs them together through `/api/crawl`. Each stage is also available on
+its own at `/api/ia/<stage>` and as a Claude Code skill in `.claude/skills/`
+(`ia-crawl`, `ia-classify`, `ia-reorganize`, `ia-audit`). See
+[`docs/ia-pipeline.md`](./docs/ia-pipeline.md) for the shared contract. The
+skills write intermediate files to `.ia-work/`, which should not be committed.

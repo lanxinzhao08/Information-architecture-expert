@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { chromium, type Page } from "playwright";
 import * as cheerio from "cheerio";
 import { PageData, PageLink } from "../types/page";
 
@@ -129,75 +129,64 @@ export function pageTitle(raw: string): string {
   return name || raw.trim();
 }
 
-export async function crawlPage(
-  url: string
-): Promise<PageData> {
-  const browser = await chromium.launch({
-    headless: true,
+async function readPage(page: Page, url: string): Promise<PageData> {
+  await page.goto(url, {
+    waitUntil: "domcontentloaded",
+    timeout: 50000,
   });
 
-  const page = await browser.newPage();
+  const html = await page.content();
+
+  const $ = cheerio.load(html);
+
+  const title = pageTitle($("title").text());
+
+  const description =
+    $('meta[name="description"]').attr("content")?.trim() || "";
+
+  const headings = $("h1, h2, h3")
+    .map((_, element) => $(element).text().trim())
+    .get()
+    .filter(Boolean);
+
+  const links: PageLink[] = [];
+
+  $("a[href]").each((_, element) => {
+    const href = $(element).attr("href");
+    const text = $(element).text().trim();
+
+    if (!href) {
+      return;
+    }
+
+    try {
+      links.push({
+        url: new URL(href, url).toString(),
+        text,
+      });
+    } catch {
+      // Ignore invalid URLs
+    }
+  });
+
+  const content = $("body").text().replace(/\s+/g, " ").trim();
+
+  return {
+    url,
+    title,
+    description,
+    headings,
+    links,
+    content,
+  };
+}
+
+export async function crawlPage(url: string): Promise<PageData> {
+  const browser = await chromium.launch({ headless: true });
 
   try {
-    await page.goto(url, {
-      waitUntil: "networkidle",
-      timeout: 30000,
-    });
-
-    const html = await page.content();
-
-    const $ = cheerio.load(html);
-
-    const title = pageTitle($("title").text());
-
-    const description =
-      $('meta[name="description"]')
-        .attr("content")
-        ?.trim() || "";
-
-    const headings = $("h1, h2, h3")
-      .map((_, element) => $(element).text().trim())
-      .get()
-      .filter(Boolean);
-
-    const links: PageLink[] = [];
-
-    $("a[href]").each((_, element) => {
-      const href = $(element).attr("href");
-      const text = $(element).text().trim();
-
-      if (!href) {
-        return;
-      }
-
-      try {
-        const absoluteUrl = new URL(
-          href,
-          url
-        ).toString();
-
-        links.push({
-          url: absoluteUrl,
-          text,
-        });
-      } catch {
-        // Ignore invalid URLs
-      }
-    });
-
-    const content = $("body")
-      .text()
-      .replace(/\s+/g, " ")
-      .trim();
-
-    return {
-      url,
-      title,
-      description,
-      headings,
-      links,
-      content,
-    };
+    const page = await browser.newPage();
+    return await readPage(page, url);
   } finally {
     await browser.close();
   }
@@ -207,8 +196,8 @@ export async function crawlSite(
   startUrl: string,
   options: CrawlOptions = {}
 ): Promise<PageData[]> {
-  const maxPages = options.maxPages ?? 50;
-  const maxDepth = options.maxDepth ?? 3;
+  const maxPages = options.maxPages ?? 400;
+  const maxDepth = options.maxDepth;
 
   const normalizedStartUrl =
     normalizeUrl(startUrl);
@@ -231,13 +220,22 @@ export async function crawlSite(
   ];
 
   const visited = new Set<string>();
+  const queued = new Set<string>([normalizedStartUrl]);
 
   const results: PageData[] = [];
 
-  while (
-    queue.length > 0 &&
-    results.length < maxPages
-  ) {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.route("**/*", (route) => {
+    const type = route.request().resourceType();
+    if (type === "image" || type === "media" || type === "font") {
+      return route.abort();
+    }
+    return route.continue();
+  });
+
+  try {
+  while (queue.length > 0 && results.length < maxPages) {
     const current = queue.shift();
 
     if (!current) {
@@ -276,8 +274,7 @@ export async function crawlSite(
       continue;
     }
 
-    // Maximum depth
-    if (depth > maxDepth) {
+    if (maxDepth !== undefined && depth > maxDepth) {
       continue;
     }
 
@@ -288,24 +285,21 @@ export async function crawlSite(
     );
 
     try {
-      const page =
-        await crawlPage(normalizedUrl);
+      const data = await readPage(page, normalizedUrl);
 
-      results.push(page);
+      results.push(data);
 
       console.log(
-        `Found: ${page.title} (${page.links.length} links)`
+        `Found: ${data.title} (${data.links.length} links)`
       );
 
-      // Discover child pages
-      if (depth < maxDepth) {
-        for (const link of page.links) {
+      // Follow every in-scope descendant unless a depth limit was requested.
+      if (maxDepth === undefined || depth < maxDepth) {
+        for (const link of data.links) {
           const normalizedLink =
             normalizeUrl(link.url);
 
-          if (
-            visited.has(normalizedLink)
-          ) {
+          if (visited.has(normalizedLink) || queued.has(normalizedLink)) {
             continue;
           }
 
@@ -324,6 +318,7 @@ export async function crawlSite(
             continue;
           }
 
+          queued.add(normalizedLink);
           queue.push({
             url: normalizedLink,
             depth: depth + 1,
@@ -339,4 +334,7 @@ export async function crawlSite(
   }
 
   return results;
+  } finally {
+    await browser.close();
+  }
 }

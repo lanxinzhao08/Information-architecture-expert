@@ -10,7 +10,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-const TIMEOUT_MS = 600_000;
+const TIMEOUT_MS = 180_000;
 const MAX_OUTPUT_TOKENS = 8192;
 const ANTHROPIC_DEFAULT_MODEL = "claude-sonnet-5-5";
 
@@ -82,7 +82,7 @@ async function completeWithCursor<T>(
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(
-        () => reject(new Error("Cursor request timed out")),
+        () => reject(new Error("Cursor request timed out after 3 minutes")),
         TIMEOUT_MS
       );
     });

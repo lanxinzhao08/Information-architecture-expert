@@ -3,7 +3,7 @@ import { crawlSite } from "../../../crawler/crawler";
 import { reviseIa } from "../../../ia/ia";
 import { IaScope, loadRules } from "../../../ia/rules";
 
-export const maxDuration = 1800;
+export const maxDuration = 7200;
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,14 +31,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
-    const pages = await crawlSite(url, { maxPages: 50, maxDepth: 3 });
+    const pages = await crawlSite(url, { maxPages: 400 });
 
     if (pages.length === 0) {
       return NextResponse.json({ error: "No pages found" }, { status: 422 });
     }
 
     const rules = await loadRules(scope);
-    const ia = await reviseIa(pages, rules.text);
+    console.log(`Applying Rule ${rules.applied} for a ${scope} link`);
+    const ia = await reviseIa(pages, rules.text, scope);
 
     return NextResponse.json({
       startUrl: url,

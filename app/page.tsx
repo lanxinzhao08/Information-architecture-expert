@@ -24,6 +24,13 @@ interface Result {
     recommended: IaNode;
     movedCount: number;
     missingCount?: number;
+    audit?: {
+      rule: "A" | "B" | "C";
+      severity: "error" | "warn" | "info";
+      page: string;
+      url?: string;
+      message: string;
+    }[];
   };
 }
 
@@ -198,8 +205,8 @@ export default function Home() {
 
         {loading && (
           <p className="mt-6 text-sm text-gray-500">
-            Crawling the section, reorganizing it, and checking for missing topics.
-            This can take a few minutes.
+            Crawling the section and its descendant pages, then reorganizing them.
+            A large section can take a while.
           </p>
         )}
 
@@ -236,6 +243,32 @@ export default function Home() {
             <ul className="rounded border p-4 text-sm">
               <Tree node={result.ia.recommended} showMoved />
             </ul>
+
+            {result.ia.audit && result.ia.audit.length > 0 && (
+              <details className="mt-6 text-sm" open>
+                <summary className="cursor-pointer font-medium text-gray-700">
+                  Rule audit ({result.ia.audit.length} findings)
+                </summary>
+                <ul className="mt-2 space-y-1 rounded border p-3">
+                  {result.ia.audit.map((f, i) => (
+                    <li key={i}>
+                      <span
+                        className={`mr-2 rounded px-1.5 text-xs ${
+                          f.severity === "error"
+                            ? "bg-red-100 text-red-800"
+                            : f.severity === "warn"
+                              ? "bg-amber-100 text-amber-900"
+                              : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        Rule {f.rule}
+                      </span>
+                      <strong>{f.page}</strong>: {f.message}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
 
             <details className="mt-6 text-sm">
               <summary className="cursor-pointer font-medium text-gray-700">

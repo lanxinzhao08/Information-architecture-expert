@@ -8,7 +8,8 @@ export const DEFAULT_RULES = `Rule A: Keep the tree at most 3 levels deep below 
 Rule B: Place related pages under the same parent, ordered by user journey (overview, concepts, how-to, reference). A page's parent must be the page that best introduces or summarizes it.
 Rule C: Every page appears exactly once. Avoid near-duplicate sibling topics by placing overlapping pages next to each other under one parent.`;
 
-export type IaScope = "product" | "feature";
+import type { IaScope } from "./types";
+export type { IaScope };
 
 export interface LoadedRules {
   text: string;
@@ -21,35 +22,53 @@ export interface LoadedRules {
  * Keep Rule A1 or Rule A2, plus every other rule. Headings must stay
  * `### Rule A1` and `### Rule A2` for this split to find them.
  */
+function isRuleHeading(line: string, rule: "A1" | "A2"): boolean {
+  return new RegExp(`^###\\s+Rule ${rule}\\b`, "i").test(line);
+}
+
 export function rulesForScope(raw: string, scope: IaScope): { text: string; applied: "A1" | "A2" } | null {
   const wanted = scope === "product" ? "A1" : "A2";
-  const wantedHeading = new RegExp(`^###\\s+Rule ${wanted}\\b`, "im");
-  if (!wantedHeading.test(raw)) return null;
+  if (!new RegExp(`^###\\s+Rule ${wanted}\\b`, "im").test(raw)) return null;
 
   const lines = raw.split(/\r?\n/);
   const kept: string[] = [];
   let inRuleA = false;
-  let skipping = false;
+  let skippingRule = false;
+  let skippingProductOnly = false;
 
   for (const line of lines) {
+    const marker = line.trim();
+    if (marker === "<!-- product-only -->") {
+      if (scope === "feature") skippingProductOnly = true;
+      continue;
+    }
+    if (marker === "<!-- /product-only -->") {
+      skippingProductOnly = false;
+      continue;
+    }
+    if (skippingProductOnly) continue;
+
     if (/^##\s+/.test(line)) {
       inRuleA = /^##\s+Rule A\b/i.test(line);
-      skipping = false;
+      skippingRule = false;
       kept.push(line);
       continue;
     }
     if (inRuleA && /^###\s+/.test(line)) {
-      skipping = !wantedHeading.test(line);
-      if (!skipping) kept.push(line);
+      skippingRule = !isRuleHeading(line, wanted);
+      if (!skippingRule) kept.push(line);
       continue;
     }
-    if (!skipping) kept.push(line);
+    if (!skippingRule) kept.push(line);
   }
 
   const note =
     scope === "product"
       ? "This URL is a product link. Apply Rule A1. Do not apply Rule A2."
-      : "This URL is a feature link. Apply Rule A2. Do not apply Rule A1.";
+      : "This URL is one feature, not a product. Apply Rule A2 to this feature only. " +
+        "Do not apply Rule A1. Do not add a product overview, a business process overview, " +
+        "workflow-based groups, shared product reference, or a second feature. " +
+        "The root page is this feature. Organize its descendants as that feature's overview, tasks, and reference.";
   const text = `${note}\n\n${kept.join("\n").replace(/\n{3,}/g, "\n\n").trim()}`;
   return { text, applied: wanted };
 }

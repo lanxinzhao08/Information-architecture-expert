@@ -1,8 +1,9 @@
 # Information Architecture Rules
 
 The reviser reads this file on every request. When the URL is a product, it
-applies Rule A1. When the URL is a feature, it applies Rule A2. Rules B and C
-always apply. Edit freely: plain prose, numbered lists, or headings all work.
+applies Rule A1. When the URL is a feature, it applies Rule A2 and skips every
+block marked `product-only`. The rest of Rules B and C always apply. Edit freely:
+plain prose, numbered lists, or headings all work.
 Keep the `### Rule A1` and `### Rule A2` headings so the app can tell them
 apart. If this file is empty, a built-in default is used.
 
@@ -49,7 +50,7 @@ For each product area, use the following structure:
 
 ### Rule A2: Feature-level information architecure
 
-For each product area, use the following structure:
+For each feature, use the following structure:
 
 - Feature A
   - Feature A overview
@@ -82,6 +83,7 @@ For each product area, use the following structure:
   * **Benefits:** Details the value proposition or outcome for typical use cases (*"What benefits does it provide?"*).  
   * **Prerequisites & Required permissions:** Specifies necessary configurations, user roles, or access levels (*"What is required before using it?"*).  
   * **Additional information or considerations:** Includes additional information like system limitations or critical considerations (*"What else should I know?"*). For EA features, "Known limitations/Constraints" section is temporarily allowed, but this section should be renamed or removed once it reaches GA.  
+<!-- product-only -->
 * Product-level overview should follow this template (*ideal state*):  
   * A few sentences about   
 1. Definition of the product like "Product X is a platform for \[user roles\] to \[do Y\]."  
@@ -90,11 +92,14 @@ For each product area, use the following structure:
    * **Capabilities**: A more detailed description of what it can do.  
    * **Key components**: List each component in this product and provide references to respective topics. For example, key components for Billing would be "Billing settings configuration", "Orders and subscriptions management", "Billing documents management".   
    * **Core concepts and features (if applicable)**
+<!-- /product-only -->
 
 ## Rule C: Follow the following content hierarchy
 
 * **High-level structure and process:**   
+<!-- product-only -->
   * Every product area should have an overview page, and a separate process overview page.  
+<!-- /product-only -->
 * **Logical sequencing:** Arrange topics in a sequence that mirrors user workflows and business logic (for example, *Create a Product* —\> *Create a PRP* —\> *Create a PRPC*).  
 * **Primary vs. advanced workflows:**   
   * Establish the primary end-to-end user path as the main navigation trunk. Feature advanced capabilities, edge cases, and optional add-ons as subordinate sub-topics or appended sections.  
