@@ -1,18 +1,1 @@
-{"timestamp":"00:00:00.723","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:01.356","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
-{"timestamp":"00:00:14.467","source":"Server","level":"LOG","message":"Crawl scope: /en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions"}
-{"timestamp":"00:00:14.469","source":"Server","level":"LOG","message":"Crawling [depth 0]: https://docs.zuora.com/en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions"}
-{"timestamp":"00:00:18.472","source":"Server","level":"LOG","message":"Found: Manage subscription transactions (87 links)"}
-{"timestamp":"00:00:18.473","source":"Server","level":"LOG","message":"Crawling [depth 1]: https://docs.zuora.com/en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions/common-subscription-information"}
-{"timestamp":"00:00:21.488","source":"Server","level":"LOG","message":"Found: Common subscription information (97 links)"}
-{"timestamp":"00:00:21.488","source":"Server","level":"LOG","message":"Crawling [depth 1]: https://docs.zuora.com/en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions/orders"}
-{"timestamp":"00:00:24.494","source":"Server","level":"LOG","message":"Found: Orders (92 links)"}
-{"timestamp":"00:00:24.494","source":"Server","level":"LOG","message":"Crawling [depth 1]: https://docs.zuora.com/en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions/orders-harmonization"}
-{"timestamp":"00:00:27.433","source":"Server","level":"LOG","message":"Found: Orders Harmonization (85 links)"}
-{"timestamp":"00:00:27.433","source":"Server","level":"LOG","message":"Crawling [depth 1]: https://docs.zuora.com/en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions/subscribe-and-amend"}
-{"timestamp":"00:00:30.290","source":"Server","level":"LOG","message":"Found: Subscribe and Amend (84 links)"}
-{"timestamp":"00:00:30.290","source":"Server","level":"LOG","message":"Crawling [depth 1]: https://docs.zuora.com/en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions/flexible-subscription-management"}
-{"timestamp":"00:00:33.212","source":"Server","level":"LOG","message":"Found: Flexible subscription management (81 links)"}
-{"timestamp":"00:00:33.213","source":"Server","level":"LOG","message":"Crawling [depth 2]: https://docs.zuora.com/en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions/common-subscription-information/tenant-type-identification-for-managing-subscriptions"}
-{"timestamp":"00:00:36.099","source":"Server","level":"LOG","message":"Found: Tenant type identification for managing subscriptions (98 links)"}
-{"timestamp":"00:00:36.099","source":"Server","level":"LOG","message":"Crawling [depth 2]: https://docs.zuora.com/en/zuora-billing/manage-accounts-subscriptions-and-non-subscriptions/manage-subscription-transactions/common-subscription-information/get-started-with-subscriptions"}
+{"timestamp":"00:00:00.881","source":"Server","level":"LOG","message":""}
