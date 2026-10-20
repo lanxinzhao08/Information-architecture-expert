@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# next.js build output
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# env files (keep secrets out of git)
+.env*
+
+# IA skill working files
+.ia-work/
+
+# misc
+.DS_Store
+npm-debug.log*
