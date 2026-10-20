@@ -15,6 +15,7 @@ type IaScope = "product" | "feature";
 
 interface Result {
   pageCount: number;
+  crawl?: { discovered: number; truncated: boolean; failed: string[]; fromSitemap: number };
   scope: IaScope;
   rulesSource: "Rules.md" | "default";
   appliedRule: "A1" | "A2" | "all";
@@ -239,6 +240,16 @@ export default function Home() {
               . Moved pages are blue. Missing topics are amber; they are not
               pages yet.
             </p>
+
+            {result.crawl && (result.crawl.truncated || result.crawl.failed.length > 0) && (
+              <p role="alert" className="mb-4 rounded bg-amber-50 p-3 text-sm text-amber-900">
+                Not every article is in this tree.
+                {result.crawl.truncated &&
+                  ` The crawl stopped at ${result.pageCount} pages but found ${result.crawl.discovered} in scope; narrow the URL to a smaller section.`}
+                {result.crawl.failed.length > 0 &&
+                  ` ${result.crawl.failed.length} page(s) failed to load: ${result.crawl.failed.slice(0, 5).join(", ")}${result.crawl.failed.length > 5 ? ", ..." : ""}.`}
+              </p>
+            )}
 
             <ul className="rounded border p-4 text-sm">
               <Tree node={result.ia.recommended} showMoved />

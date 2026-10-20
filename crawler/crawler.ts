@@ -129,11 +129,39 @@ export function pageTitle(raw: string): string {
   return name || raw.trim();
 }
 
+/**
+ * Open collapsed navigation groups so their child links enter the DOM. Only
+ * button-like toggles are clicked, never links, so the page cannot navigate away.
+ */
+async function expandCollapsedNav(page: Page): Promise<void> {
+  try {
+    for (let round = 0; round < 4; round++) {
+      const clicked = await page.evaluate(() => {
+        const toggles = Array.from(
+          document.querySelectorAll<HTMLElement>(
+            'button[aria-expanded="false"], [role="button"][aria-expanded="false"]'
+          )
+        ).filter((el) => el.tagName !== "A").slice(0, 200);
+        toggles.forEach((el) => el.click());
+        return toggles.length;
+      });
+      if (clicked === 0) break;
+      await page.waitForTimeout(150);
+    }
+  } catch {
+    // Best effort: a page that blocks scripting still gets read as-is.
+  }
+}
+
 async function readPage(page: Page, url: string): Promise<PageData> {
   await page.goto(url, {
     waitUntil: "domcontentloaded",
     timeout: 50000,
   });
+
+  // Docs sites often render the sidebar client-side; give it a moment.
+  await page.waitForLoadState("networkidle", { timeout: 4000 }).catch(() => {});
+  await expandCollapsedNav(page);
 
   const html = await page.content();
 
@@ -181,6 +209,69 @@ async function readPage(page: Page, url: string): Promise<PageData> {
   };
 }
 
+const SITEMAP_TIMEOUT_MS = 10_000;
+const MAX_SITEMAPS = 20;
+
+async function fetchText(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(SITEMAP_TIMEOUT_MS) });
+    return response.ok ? await response.text() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * URLs the site itself lists in its sitemap(s). This finds articles that no
+ * crawled page links to. Only same-host sitemaps are fetched.
+ */
+async function sitemapUrls(startUrl: string): Promise<string[]> {
+  const origin = new URL(startUrl).origin;
+  const host = new URL(startUrl).hostname;
+
+  const pending: string[] = [`${origin}/sitemap.xml`];
+  const robots = await fetchText(`${origin}/robots.txt`);
+  for (const match of robots?.matchAll(/^\s*sitemap:\s*(\S+)/gim) ?? []) {
+    pending.push(match[1]);
+  }
+
+  const seen = new Set<string>();
+  const found: string[] = [];
+
+  while (pending.length > 0 && seen.size < MAX_SITEMAPS) {
+    const sitemap = pending.shift()!;
+    if (seen.has(sitemap)) continue;
+    try {
+      if (new URL(sitemap).hostname !== host) continue;
+    } catch {
+      continue;
+    }
+    seen.add(sitemap);
+
+    const xml = await fetchText(sitemap);
+    if (!xml) continue;
+    const isIndex = /<sitemapindex/i.test(xml);
+    for (const match of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) {
+      const loc = match[1].replace(/&amp;/g, "&");
+      if (isIndex) pending.push(loc);
+      else found.push(loc);
+    }
+  }
+
+  return found;
+}
+
+export interface CrawlStats {
+  /** Pages in scope that were found (crawled or still queued). */
+  discovered: number;
+  /** True when the page cap stopped the crawl with pages still queued. */
+  truncated: boolean;
+  /** URLs that could not be loaded after a retry. */
+  failed: string[];
+  /** In-scope URLs found only through the sitemap. */
+  fromSitemap: number;
+}
+
 export async function crawlPage(url: string): Promise<PageData> {
   const browser = await chromium.launch({ headless: true });
 
@@ -196,6 +287,13 @@ export async function crawlSite(
   startUrl: string,
   options: CrawlOptions = {}
 ): Promise<PageData[]> {
+  return (await crawlSiteWithStats(startUrl, options)).pages;
+}
+
+export async function crawlSiteWithStats(
+  startUrl: string,
+  options: CrawlOptions = {}
+): Promise<{ pages: PageData[]; stats: CrawlStats }> {
   const maxPages = options.maxPages ?? 400;
   const maxDepth = options.maxDepth;
 
@@ -223,6 +321,20 @@ export async function crawlSite(
   const queued = new Set<string>([normalizedStartUrl]);
 
   const results: PageData[] = [];
+  const failed: string[] = [];
+  let fromSitemap = 0;
+
+  for (const raw of await sitemapUrls(normalizedStartUrl)) {
+    try {
+      const url = normalizeUrl(raw);
+      if (queued.has(url) || !isInScope(url, normalizedStartUrl) || !isCrawlableUrl(url)) continue;
+      queued.add(url);
+      queue.push({ url, depth: 1 });
+      fromSitemap++;
+    } catch {
+      // ignore malformed sitemap entries
+    }
+  }
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
@@ -285,7 +397,12 @@ export async function crawlSite(
     );
 
     try {
-      const data = await readPage(page, normalizedUrl);
+      let data: PageData;
+      try {
+        data = await readPage(page, normalizedUrl);
+      } catch {
+        data = await readPage(page, normalizedUrl); // one retry
+      }
 
       results.push(data);
 
@@ -326,6 +443,7 @@ export async function crawlSite(
         }
       }
     } catch (error) {
+      failed.push(normalizedUrl);
       console.error(
         `Failed to crawl ${normalizedUrl}`,
         error
@@ -333,7 +451,14 @@ export async function crawlSite(
     }
   }
 
-  return results;
+  const stats: CrawlStats = {
+    discovered: results.length + failed.length + queue.filter((q) => !visited.has(normalizeUrl(q.url))).length,
+    truncated: queue.some((q) => !visited.has(normalizeUrl(q.url))),
+    failed,
+    fromSitemap,
+  };
+
+  return { pages: results, stats };
   } finally {
     await browser.close();
   }

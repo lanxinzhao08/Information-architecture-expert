@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { crawlSite } from "../../../../crawler/crawler";
+import { crawlSiteWithStats } from "../../../../crawler/crawler";
 import { classifyPages } from "../../../../ia/classify";
 import { reviseIa } from "../../../../ia/ia";
 import type { IaNode } from "../../../../ia/ia";
@@ -72,9 +72,9 @@ export async function POST(
       } catch {
         return bad("A valid http(s) url is required");
       }
-      const pages = await crawlSite(url, { maxPages: 400 });
+      const { pages, stats } = await crawlSiteWithStats(url, { maxPages: 400 });
       if (pages.length === 0) return bad("No pages found", 422);
-      return NextResponse.json({ startUrl: url, pageCount: pages.length, pages });
+      return NextResponse.json({ startUrl: url, pageCount: pages.length, crawl: stats, pages });
     }
 
     const scope = parseScope(body.scope);

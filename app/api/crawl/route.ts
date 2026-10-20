@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { crawlSite } from "../../../crawler/crawler";
+import { crawlSiteWithStats } from "../../../crawler/crawler";
 import { reviseIa } from "../../../ia/ia";
 import { IaScope, loadRules } from "../../../ia/rules";
 
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
-    const pages = await crawlSite(url, { maxPages: 400 });
+    const { pages, stats } = await crawlSiteWithStats(url, { maxPages: 400 });
 
     if (pages.length === 0) {
       return NextResponse.json({ error: "No pages found" }, { status: 422 });
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       startUrl: url,
       scope,
       pageCount: pages.length,
+      crawl: stats,
       rulesSource: rules.source,
       appliedRule: rules.applied,
       rules: rules.text,
