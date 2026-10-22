@@ -555,7 +555,7 @@ async function placeInBatches(
         error
       );
       if (failures >= 2) {
-        console.error("Stopping after repeated Cursor timeouts.");
+        console.error("Stopping after repeated LLM failures.");
         break;
       }
     }

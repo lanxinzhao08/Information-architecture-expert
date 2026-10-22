@@ -14,6 +14,26 @@ const TIMEOUT_MS = 180_000;
 const MAX_OUTPUT_TOKENS = 8192;
 const ANTHROPIC_DEFAULT_MODEL = "claude-sonnet-5-5";
 
+/**
+ * Sonnet 5.5 thinks unless told otherwise, and it rejects `thinking: disabled`.
+ * `between_tools` skips that up-front pass when the request offers no tools.
+ * Sonnet 5 accepts `disabled`. Other models are left on their default.
+ */
+function thinkingMode(model: string): "between_tools" | "disabled" | undefined {
+  if (/sonnet-5[.-]5\b/i.test(model)) return "between_tools";
+  if (/claude-sonnet-5\b/i.test(model)) return "disabled";
+  return undefined;
+}
+
+/** Text blocks only. A thinking block has no `text` and is often first. */
+function messageText(data: { content?: { type?: string; text?: unknown }[] }): string {
+  const blocks = Array.isArray(data?.content) ? data.content : [];
+  return blocks
+    .filter((block) => block?.type === "text" && typeof block.text === "string")
+    .map((block) => block.text as string)
+    .join("");
+}
+
 /** First complete `{...}` object, ignoring braces inside strings and any text after it. */
 function parseJsonObject<T>(text: string): T {
   const start = text.indexOf("{");
@@ -114,6 +134,7 @@ async function completeWithAnthropic<T>(
   apiKey: string
 ): Promise<T> {
   const model = process.env.LLM_MODEL || ANTHROPIC_DEFAULT_MODEL;
+  const thinking = thinkingMode(model);
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -125,6 +146,7 @@ async function completeWithAnthropic<T>(
     body: JSON.stringify({
       model,
       max_tokens: MAX_OUTPUT_TOKENS,
+      ...(thinking ? { thinking: { type: thinking } } : {}),
       system,
       messages: [{ role: "user", content: user }],
     }),
@@ -136,7 +158,11 @@ async function completeWithAnthropic<T>(
   }
 
   const data = await response.json();
-  const text: string = data?.content?.[0]?.text ?? "";
+  const text = messageText(data);
+  if (!text.trim()) {
+    const reason = typeof data?.stop_reason === "string" ? data.stop_reason : "unknown";
+    throw new Error(`LLM returned no text (stop_reason: ${reason})`);
+  }
   return parseJsonObject<T>(text);
 }
 
