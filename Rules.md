@@ -1,109 +1,173 @@
 # Information Architecture Rules
 
-The reviser reads this file on every request. When the URL is a product, it
-applies Rule A1. When the URL is a feature, it applies Rule A2 and skips every
-block marked `product-only`. The rest of Rules B and C always apply. Edit freely:
-plain prose, numbered lists, or headings all work.
-Keep the `### Rule A1` and `### Rule A2` headings so the app can tell them
-apart. If this file is empty, a built-in default is used.
+This file is read by the reviser (an AI agent) on every request. It defines the required information architecture (IA) for a product or feature: the topic structure, the content of overview pages, and the order of topics.
 
-## Rule A: Implement the information architecture design dependent on whether the specified URL is for a product or for a feature
+Keep the headings `### Rule A1` and `### Rule A2` exactly as written. The app uses them to tell the two scope rules apart. Blocks wrapped in `<!-- product-only -->` and `<!-- /product-only -->` are read only for product scope. If this file is empty, a built-in default is used.
+
+## How to apply these rules
+
+1. **Choose the scope from the URL.**
+   - Product URL: apply Rule A1, Rule B, and Rule C. Include `product-only` blocks.
+   - Feature URL: apply Rule A2, Rule B, and Rule C. Skip every `product-only` block.
+   - State the scope you chose before producing the structure.
+2. **Apply the rules in this order:** Rule A (structure), then Rule B (overview page content), then Rule C (topic ordering).
+3. **If rules appear to conflict,** follow Rule A for section structure, Rule B for overview content, and Rule C for ordering.
+4. **Finish with the checklist** at the end of this file.
+
+## Glossary
+
+- **Product area:** A major grouping of related products or features, such as Billing.
+- **Product:** A complete platform or offering that serves one or more user roles.
+- **Feature:** A capability within a product area, such as Orders and subscriptions management.
+- **Task:** A step-by-step user goal within a feature, such as "Create a product."
+- **Task reference topic:** Supporting information a user needs to complete one specific task. It is subordinate to that task.
+- **Feature reference:** Reference material for a whole feature: concepts, configuration fields, API details, and examples.
+- **Business workflow:** An end-to-end business path made of tasks from one or more features.
+- **Overview:** A conceptual topic that answers "What is it?" and related questions. See Rule B.
+- **Shared product reference:** Material that applies across the whole product, not to one feature.
+- **EA:** Early access. **GA:** General availability.
+- **PRP / PRPC:** Product Rate Plan / Product Rate Plan Charge (Zuora terminology).
+
+## Rule A: Structure by scope
 
 ### Rule A1: Product-level information architecture
-For each product area, use the following structure:
 
-- Product overview
-- Business process overview (including the diagrams)
-- Feature-based 
-  - Feature A
-    - Feature A overview
-    - Task a
-      - Task a reference topics, if applicable
-    - Task b
-    - Feature A reference
-      - Concepts and terminology
-      - Configuration field reference
-      - API reference, if applicable
-      - Use cases/Examples for Feature A
-  - Feature B
-    - Feature B overview
-    - Task c
-    - Task d
-    - Feature B reference
-      - Concepts and terminology
-      - Configuration field reference
-      - API reference, if applicable
-      - Use cases/Examples for Feature B
-- Workflow-based, if exists
-  - Business workflow 1
-    - Feature A - task a
-    - Feature A - task b
-    - Feature B - task c
-  - Business workflow 2
-    - Feature B - task c
-    - Feature B - task d
-- Shared product reference, such as: 
-  - Product-wide concepts 
-  - Shared terminology
-  - Cross-feature behavior
-  - Developer resources
+Apply this rule when the scope is a product. Arrange the topics in this order:
 
-### Rule A2: Feature-level information architecure
+1. **Product overview** (see Rule B).
+2. **Business process overview**, including diagrams.
+3. **Features**. Repeat this group for each feature:
+   - Feature overview.
+   - Tasks, in user-workflow order. Place each task's reference topics directly under it, if any exist.
+   - Feature reference, containing:
+     - Concepts and terminology
+     - Configuration field reference
+     - API reference (if applicable)
+     - Use cases and examples
+4. **Business workflows** (if any exist). Repeat this group for each workflow. List the tasks it uses, and name each task with its feature, for example "Feature A: Task a."
+5. **Shared product reference**, containing:
+   - Product-wide concepts
+   - Shared terminology
+   - Cross-feature behavior
+   - Developer resources
 
-For each feature, use the following structure:
+Use this skeleton, replacing the `{placeholders}`:
 
-- Feature A
-  - Feature A overview
-  - Task a
-    - Task a reference topics, if applicable
-  - Task b
-    - Task b reference topics, if applicable
-  - Feature A reference
-    - Concepts and terminology
-    - Configuration field reference
-    - API reference, if applicable
-    - Use cases/Examples for Feature A
-- Feature B
-  - Feature B overview
-  - Task c
-  - Task d
-  - Feature B reference
-    - Concepts and terminology
-    - Configuration field reference
-    - API reference, if applicable
-    - Use cases/Examples for Feature B
+```
+Product overview
+Business process overview (with diagrams)
+Features
+  {Feature A}
+    {Feature A} overview
+    {Task a}
+      {Task a} reference topics (if any)
+    {Task b}
+    {Feature A} reference
+      Concepts and terminology
+      Configuration field reference
+      API reference (if applicable)
+      Use cases and examples
+  {Feature B}
+    ...
+Business workflows (if any)
+  {Workflow 1}
+    {Feature A}: {Task a}
+    {Feature A}: {Task b}
+    {Feature B}: {Task c}
+Shared product reference
+  Product-wide concepts
+  Shared terminology
+  Cross-feature behavior
+  Developer resources
+```
 
+### Rule A2: Feature-level information architecture
 
-## Rule B: Follow the following "Overview" page depth and structure
+Apply this rule when the scope is a single feature. Use only the feature group from Rule A1. Do not add product-level sections, workflows, or shared product reference.
 
-* **Title formulation:** Use the standard naming convention: \[Product / Feature / Capability / Process\] overview.  
-* **Content depth:** Avoid single-paragraph or overly brief overview pages (fewer than three sentences). If content is sparse, either expand the topic with relevant context or consolidate it into a broader section.  
-* **Standard structural framework:** Maintain structural consistency across all feature-level overview topics by adhering to the following section hierarchy:  
-  * The first few paragraphs should be the overview that defines the core concept (*"What is it?"*). Do not add a section called "Overview".  
-  * **Benefits:** Details the value proposition or outcome for typical use cases (*"What benefits does it provide?"*).  
-  * **Prerequisites & Required permissions:** Specifies necessary configurations, user roles, or access levels (*"What is required before using it?"*).  
-  * **Additional information or considerations:** Includes additional information like system limitations or critical considerations (*"What else should I know?"*). For EA features, "Known limitations/Constraints" section is temporarily allowed, but this section should be renamed or removed once it reaches GA.  
+```
+{Feature A}
+  {Feature A} overview
+  {Feature A} process overview (if any)
+  {Task a}
+    {Task a} reference topics (if any)
+  {Task b}
+    {Task b} reference topics (if any)
+  {Feature A} reference
+    Concepts and terminology
+    Configuration field reference
+    API reference (if applicable)
+    Use cases and examples
+```
+
+## Rule B: Overview page content
+
+### B1. Titles
+
+Use the pattern `{Product | Feature | Capability | Process} overview`.
+
+Examples: "Billing overview" (product), "Orders and subscriptions overview" (feature), "Subscription renewal process overview" (process).
+
+### B2. Length
+
+An overview page must have at least three sentences. If the source material is too sparse, either add relevant context or merge the topic into a broader section.
+
+### B3. Section order (feature, capability, and process overviews)
+
+Write the opening as one to three paragraphs that answer "What is it?" Do not add a heading called "Overview" for the opening. After the opening, use these headings, in this order:
+
+1. **Benefits**. Answers "What benefits does it provide?" Describe the value or outcome for typical use cases.
+2. **Prerequisites and required permissions**. Answers "What is required before using it?" List required configuration, user roles, and access levels.
+3. **Additional information** or **Considerations**. Answers "What else should I know?" Include system limitations and critical considerations.
+
+For EA features only, a "Known limitations/Constraints" subsection may appear inside this section. Rename or remove it when the feature reaches GA.
+
 <!-- product-only -->
-* Product-level overview should follow this template (*ideal state*):  
-  * A few sentences about   
-1. Definition of the product like "Product X is a platform for \[user roles\] to \[do Y\]."  
-2. How can users use it to achieve business outcomes.  
-   * **How it works:** A simple conceptual model diagram to show how it works or interoperates with other systems.  
-   * **Capabilities**: A more detailed description of what it can do.  
-   * **Key components**: List each component in this product and provide references to respective topics. For example, key components for Billing would be "Billing settings configuration", "Orders and subscriptions management", "Billing documents management".   
-   * **Core concepts and features (if applicable)**
+### B4. Product overview (product scope only)
+
+Use this template:
+
+1. **Definition.** One sentence in this form: "[Product] is a [platform] for [user roles] to [do Y]."
+2. **Business outcomes.** A few sentences on how users achieve business outcomes with the product.
+3. **How it works.** A simple conceptual model diagram showing how the product works or interoperates with other systems.
+4. **Capabilities.** A more detailed description of what the product can do.
+5. **Key components.** A list of each component, with a link to its topic. Example for Billing: Billing settings configuration; Orders and subscriptions management; Billing documents management.
+6. **Core concepts and features** (if applicable).
 <!-- /product-only -->
 
-## Rule C: Follow the following content hierarchy
+## Rule C: Topic ordering and hierarchy
 
-* **High-level structure and process:**   
 <!-- product-only -->
-  * Every product area should have an overview page, and a separate process overview page.  
+### C1. Product areas (product scope only)
+
+Every product area has two separate pages: an overview page and a business process overview page.
 <!-- /product-only -->
-* **Logical sequencing:** Arrange topics in a sequence that mirrors user workflows and business logic (for example, *Create a Product* —\> *Create a PRP* —\> *Create a PRPC*).  
-* **Primary vs. advanced workflows:**   
-  * Establish the primary end-to-end user path as the main navigation trunk. Feature advanced capabilities, edge cases, and optional add-ons as subordinate sub-topics or appended sections.  
-  * If some reference topics are only related to certain tasks, reference topics should always be subordinate to the tasks they relate to.  
-  * Conceptual information that is "nice to have" like key concepts or special circumstances should always be placed after the primary information. 
 
+### C2. Sequence follows the user
 
+Arrange topics in the order a user works through them. Example: Create a product → Create a PRP → Create a PRPC.
+
+### C3. Primary path first
+
+- The primary end-to-end user path forms the main navigation trunk.
+- Advanced capabilities, edge cases, and optional add-ons come after the primary path, as subordinate sub-topics or appended sections.
+
+### C4. Reference topics sit under their tasks
+
+- A reference topic that relates to only certain tasks goes under those tasks.
+- A reference topic that serves the whole feature goes in the feature reference.
+
+### C5. Nice-to-have information comes last
+
+Place key concepts and special circumstances after the primary information.
+
+## Checklist before finishing
+
+- [ ] Scope was chosen from the URL and stated.
+- [ ] `product-only` blocks were used only for product scope.
+- [ ] Each feature has an overview, tasks, and a feature reference.
+- [ ] Each overview has at least three sentences and follows the title pattern in B1.
+- [ ] Each overview uses the opening, then Benefits, Prerequisites and required permissions, and Additional information or considerations, in that order.
+- [ ] Reference topics appear under the tasks they relate to.
+- [ ] The primary path comes first, and nice-to-have information comes last.
+- [ ] Any EA-only limitations section is flagged for removal at GA.
